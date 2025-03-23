@@ -1,2 +1,2 @@
 address balance = tb1qg2gpxm8saray8j4qxgk34xc3p4k66m839ev8p3
-txid = 
+txid = got 0 
