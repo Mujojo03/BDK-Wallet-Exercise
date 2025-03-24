@@ -1,89 +1,84 @@
+import bip39
+import requests
 import bdkpython as bdk
-from mnemonic import Mnemonic as MnemonicLib
-from bip_utils import Bip39SeedGenerator, Bip44, Bip44Coins
+from mnemonic import Mnemonic
+from bip32 import BIP32
+# from bip39 import BIP39
+from bitcoinlib.keys import HDKey
 
-# Step 1: Generate a mnemonic
-try:
-    print("Generating mnemonic seed...")
+#How I generated the mnemonic phrase
+mnemonic = Mnemonic("english")
+mnemonic_phrase = mnemonic.generate(strength=128)  # Generate a new 12-word mnemonic
+print(f"Mnemonic: {mnemonic_phrase}")
 
-    #step 2: convert mnemonic to seed
-    # generate mnemonic from mnemoniclib
-    mnemoniclib = MnemonicLib("english")
-    mnemo_phrase = mnemoniclib.generate(strength=128)
-    print(mnemo_phrase)
-    seed_bytes = mnemoniclib.to_seed(mnemo_phrase, passphrase="")
-    print("MnemonicLib converted to seed successfully.")
-    print(seed_bytes)
+# Convert Mnemonic to Seed
+seed = mnemonic.to_seed(mnemonic_phrase)  # Convert mnemonic to seed
+# root_key = BIP32.from_seed(seed)
+root_key = BIP32.from_seed(seed, network="test")
 
-except Exception as e:
-    print(f"Error converting mnemonic to seed: {e}")
-    exit(1)
-    
-# Step 3
-try:
-    bip44_mst = Bip44.FromSeed(seed_bytes, Bip44Coins.BITCOIN_TESTNET)
-    account_key = bip44_mst.Purpose().Coin().Account(0)
-    print("Extended private key derived successfully.")
 
-except Exception as e:
-    print(f"Error deriving extended private key: {e}")
-    exit(1)
+# # Generate Mnemonic phrase - 1
+# mnemonic = Mnemonic("english")
+# mnemonic_phrase = "hill neglect prison common modify tone shadow trophy hazard toy boil seat"  # Fixed Mnemonic which was already generated
+# print(f"Mnemonic: {mnemonic_phrase}")
 
-# Step 4: Create descriptors
-try:
-    # Get the extended private key (xprv) from the Bip44 account key
-    xprv = account_key.PrivateKey().ToExtended()
+# # Convert Mnemonic to Seed - 1
+# seed = mnemonic.to_seed(mnemonic_phrase)
+# root_key = BIP32.from_seed(seed)
 
-    # Create descriptors using the xprv
-    descriptor = bdk.Descriptor(
-        f"wpkh({xprv}/0/*)", 
-        bdk.Network.TESTNET
-    )
-    change_descriptor = bdk.Descriptor(
-        f"wpkh({xprv}/1/*)",  
-        bdk.Network.TESTNET
-    )
-    print("Descriptors created successfully.")
-except Exception as e:
-    print(f"Error creating descriptors: {e}")
-    exit(1)
 
-# Step 5: Initialize wallet
-try:
-    wallet = bdk.Wallet(
-        descriptor,
-        change_descriptor,
-        bdk.Network.TESTNET,
-        bdk.MemoryDatabase()
-    )
-    print("Wallet initialized successfully.")
-except Exception as e:
-    print(f"Error initializing wallet: {e}")
-    exit(1)
+# BIP84 (SegWit) Address Derivation
+# path_bip84 = "m/84'/1'/0'/0/{i}" #m/44'/1'/0'/0/0 - change address
+# child_key_bip84 = HDKey(root_key.get_privkey_from_path(path_bip84), network='testnet')
+# p2wpkh_address = child_key_bip84.address()
+# print(f"Generated SegWit Address: {p2wpkh_address}")
 
-# Step 6: Generate and display addresses
+# Generate three receiving addresses
+# BIP84 (SegWit) Address Derivation
 print("\nGenerated Addresses:")
-try:
-    for i in range(3):
-        address = wallet.get_address(bdk.AddressIndex.NEW).address
-        print(f"Address {i+1}: {address}")
-except Exception as e:
-    print(f"Error generating addresses: {e}")
-    exit(1)
+for i in range(3):
+    path_bip84 = f"m/84'/1'/0'/0/{i}"  # Replace {i} with the current index
+    child_key_bip84 = HDKey(root_key.get_privkey_from_path(path_bip84), network='testnet')
+    p2wpkh_address = child_key_bip84.address()
+    print(f"Address {i + 1}: {p2wpkh_address}")
+    
 
-    # Step 7: Synchronize wallet with testnet
-try:
-    blockchain = bdk.ElectrumBlockchain(config={"url": "ssl://electrum.blockstream.info:60002"})
-    print("\nSynchronizing with testnet...")
-    wallet.sync(blockchain)
-    balance = wallet.get_balance()
-    print(f"Balance: {balance.total} satoshis ({balance.total / 100_000_000:.8f} BTC)")
-except Exception as e:
-    print(f"Error synchronizing wallet: {e}")
-    exit(1)
+# BIP44 (P2PKH) Address Derivation
+path_bip44 = "m/44'/1'/0'/0/0"
+child_key_bip44 = HDKey(root_key.get_privkey_from_path(path_bip44), network='testnet')
+p2pkh_address = child_key_bip44.address()
+print(f"Generated P2PKH Address: {p2pkh_address}")
 
-# Step 8: Verify funding status
-if balance.total > 0:
-    print("Funding confirmed—wallet is active.")
-else:
-    print("No funds detected—continue funding.")
+# Function to fetch balance
+def get_balance(address):
+    try:
+        url = f"https://blockstream.info/testnet/api/address/{address}"
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        data = response.json()
+        print("Balance Information:", data.get("chain_stats", {}))
+    except requests.exceptions.RequestException as e:
+        print("Error fetching balance:", e)
+
+# Function to fetch transaction history
+def get_transaction_history(address):
+    try:
+        url = f"https://blockstream.info/testnet/api/address/{address}/txs"
+        response = requests.get(url, timeout=30)
+        response.raise_for_status()
+        transactions = response.json()
+        if not transactions:
+            print("No transactions found.")
+        else:
+            print("Transaction History:")
+            for i, tx in enumerate(transactions, 1):
+                print(f"TX {i}: ID: {tx['txid']}, Confirmed: {tx['status']['confirmed']}")
+    except requests.exceptions.RequestException as e:
+        print("Error fetching transactions:", e)
+
+# Fetch balance and transaction history
+print("\nFetching balance for SegWit Address...")
+get_balance(p2wpkh_address)
+
+print("\nFetching transaction history for SegWit Address...")
+get_transaction_history(p2wpkh_address)
