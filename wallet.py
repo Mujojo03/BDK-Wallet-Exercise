@@ -26,13 +26,6 @@ print(f"Mnemonic: {mnemonic_phrase}")
 seed = mnemonic.to_seed(mnemonic_phrase)
 root_key = BIP32.from_seed(seed, network="test")
 
-
-# BIP84 (SegWit) Address Derivation one address
-# path_bip84 = "m/84'/1'/0'/0/{i}" #m/44'/1'/0'/0/0 - change address
-# child_key_bip84 = HDKey(root_key.get_privkey_from_path(path_bip84), network='testnet')
-# p2wpkh_address = child_key_bip84.address()
-# print(f"Generated SegWit Address: {p2wpkh_address}")
-
 # Generate three receiving addresses
 # BIP84 (SegWit) Address Derivation
 print("\nGenerated Addresses:")
@@ -67,27 +60,6 @@ def get_balance(address):
     except requests.exceptions.RequestException as e:
         print(f"Error fetching balance for {address}: {e}")
 
-    #     print("Balance Information:", data.get("chain_stats", {}))
-    # except requests.exceptions.RequestException as e:
-    #     print("Error fetching balance:", e)
-
-
-# Function to fetch transaction history
-def get_transaction_history(address):
-    try:
-        url = f"https://blockstream.info/testnet/api/address/{address}/txs"
-        response = requests.get(url, timeout=30)
-        response.raise_for_status()
-        transactions = response.json()
-        if not transactions:
-            print("No transactions found.")
-        else:
-            print("Transaction History:")
-            for i, tx in enumerate(transactions, 1):
-                print(f"TX {i}: ID: {tx['txid']}, Confirmed: {tx['status']['confirmed']}")
-    except requests.exceptions.RequestException as e:
-        print("Error fetching transactions:", e)
-
 # Fetch balance and transaction history for all SegWit addresses
 print("\nFetching balance and transaction history for SegWit Addresses:")
 for i in range(3):  # Loop through the 3 generated addresses
@@ -105,6 +77,3 @@ for i in range(3):  # Loop through the 3 generated addresses
     # Fetch and print the transaction history for the address
     print(f"\nFetching transaction history for Address {i + 1}: {p2wpkh_address}")
     get_transaction_history(p2wpkh_address)
-
-print("\nFetching transaction history for SegWit Address...")
-get_transaction_history(p2wpkh_address)
