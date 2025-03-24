@@ -1,2 +1,3 @@
-address balance = tb1qg2gpxm8saray8j4qxgk34xc3p4k66m839ev8p3
-txid = got 0 
+Fetching balance for Address 1: tb1qe75htk5llw8e36u95ermh0v8d7zq6j88t8xudv
+1200 satoshis (0.00001200 BTC)
+TX 1: ID: 077fb3fd9c2a9ba2749051d2ff1a5dec0970322b1bfb027250581e8289b6e013
