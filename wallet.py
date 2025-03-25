@@ -3,7 +3,6 @@ import requests
 import bdkpython as bdk
 from mnemonic import Mnemonic
 from bip32 import BIP32
-# from bip39 import BIP39
 from bitcoinlib.keys import HDKey
 
 # #How I generated the mnemonic phrase
@@ -17,7 +16,7 @@ from bitcoinlib.keys import HDKey
 # root_key = BIP32.from_seed(seed, network="test")
 
 
-# An already Generated Mnemonic phrase
+# An already Generated Mnemonic phrase from the commented code above
 mnemonic = Mnemonic("english")
 mnemonic_phrase = "dose wealth kiss target antique grab frown finish grocery inmate effort two"  # Fixed Mnemonic which was already generated
 print(f"Mnemonic: {mnemonic_phrase}")
@@ -36,7 +35,7 @@ for i in range(3):
     print(f"Address {i + 1}: {p2wpkh_address}")
     
 
-# BIP44 (P2PKH) Address Derivation
+# BIP44 (P2PKH) Option Address Derivation
 path_bip44 = "m/44'/1'/0'/0/0"
 child_key_bip44 = HDKey(root_key.get_privkey_from_path(path_bip44), network='testnet')
 p2pkh_address = child_key_bip44.address()
@@ -74,6 +73,6 @@ for i in range(3):  # Loop through the 3 generated addresses
     # Fetch and print the balance for the address
     get_balance(p2wpkh_address)
     
-    # Fetch and print the transaction history for the address
-    print(f"\nFetching transaction history for Address {i + 1}: {p2wpkh_address}")
-    get_transaction_history(p2wpkh_address)
+    # # Fetch and print the transaction history for the address
+    # print(f"\nFetching transaction history for Address {i + 1}: {p2wpkh_address}")
+    # get_transaction_history(p2wpkh_address) wallet.listTransactions()
